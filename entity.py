@@ -4,11 +4,7 @@ from components.item import Item
 
 from render_functions import RenderOrder
 
-
 class Entity:
-    """
-    A generic object to represent players, enemies, items, etc.
-    """
     def __init__(self, x, y, char, color, name, blocks=False, render_order=RenderOrder.CORPSE, fighter=None, ai=None,
                  item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None):
         self.x = x
@@ -57,7 +53,6 @@ class Entity:
                 self.item.owner = self
 
     def move(self, dx, dy):
-        # Move the entity by a given amount
         self.x += dx
         self.y += dy
 
@@ -72,6 +67,17 @@ class Entity:
                                                                                                    self.y + dy):
                 self.move(dx, dy)
 
+    def move_away(self, target_x, target_y, game_map, entities):
+        path = game_map.compute_path(self.x, self.y, target_x, target_y)
+
+        if path:
+            dx = self.x - path[0][0]
+            dy = self.y - path[0][1]
+
+            if game_map.walkable[self.x + dx, self.y + dy] and not get_blocking_entities_at_location(entities, self.x + dx,
+                                                                                                       self.y + dy):
+                self.move(dx, dy)                                 
+
     def distance(self, x, y):
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
@@ -79,7 +85,6 @@ class Entity:
         dx = other.x - self.x
         dy = other.y - self.y
         return math.sqrt(dx ** 2 + dy ** 2)
-
 
 def get_blocking_entities_at_location(entities, destination_x, destination_y):
     for entity in entities:
