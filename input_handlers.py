@@ -54,6 +54,9 @@ def handle_player_turn_keys(user_input):
     elif key_char == '.' and user_input.shift:
         return {'take_stairs': True}
 
+    elif key_char == ',' and user_input.shift:
+        return {'take_stairs': True}
+
     elif key_char == 'c':
         return {'show_character_screen': True}
 
@@ -119,6 +122,8 @@ def handle_main_menu(user_input):
             return {'new_game': True}
         elif key_char == 'b':
             return {'load_game': True}
+##        elif key_char == 'c':
+##            return {'tutorial': True}
         elif key_char == 'c' or user_input.key == 'ESCAPE':
             return {'exit': True}
 
@@ -132,9 +137,13 @@ def handle_level_up_menu(user_input):
         if key_char == 'a':
             return {'level_up': 'hp'}
         elif key_char == 'b':
-            return {'level_up': 'str'}
+            return {'level_up': 'pwr'}
         elif key_char == 'c':
+            return {'level_up': 'acc'}
+        elif key_char == 'd':
             return {'level_up': 'def'}
+        elif key_char == 'e':
+            return {'level_up': 'dod'}
 
     return {}
 

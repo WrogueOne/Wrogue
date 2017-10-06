@@ -1,0 +1,307 @@
+from random import randint
+
+from components.entity import Entity
+from components.fighter import Fighter
+from components.ai import BasicMonster, ConfusedMonster, ArcherMonster
+from components.ai import NaturalMonster, CowardlyMonster, FrozenMonster
+
+from components.entity import get_blocking_entities_at_location
+
+from random_utils import from_dungeon_level, random_choice_from_dict
+
+from render_functions import RenderOrder
+    
+def generate_monsters(x, y, entities, dungeon_level, colors):
+
+    monsters = {
+        ###humanoids###
+        'kobold': (Entity(x, y, 'k', colors.get('light_green'), 'Kobold', blocks=True,
+                          render_order=RenderOrder.ACTOR,
+                          fighter=Fighter(hp=10, defense=0, power=1, xp=10,
+                                          is_humanoid=True),
+                          ai=CowardlyMonster())),
+        'goblin': (Entity(x, y, 'g', colors.get('blue'), 'Goblin', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=20, defense=1, power=2, xp=30,
+                                       is_humanoid=True),
+                       ai=BasicMonster())),
+        'orc': (Entity(x, y, 'o', colors.get('desaturated_green'), 'Orc', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=30, defense=2, power=4, xp=80,
+                                       is_humanoid=True),
+                       ai=BasicMonster())),
+        'troll': (Entity(x, y, 'T', colors.get('darker_green'), 'Troll', blocks=True,
+                             render_order=RenderOrder.ACTOR,
+                             fighter=Fighter(hp=50, defense=2, power=6, xp=250,
+                                             regen=2, regen_rate=20,
+                                             is_humanoid=True),
+                             ai=BasicMonster())),
+        'minotaur': (Entity(x, y, 'M', colors.get('red'), 'Minotaur', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=50, defense=1, power=6, xp=175,
+                                       is_humanoid=True),
+                       ai=BasicMonster())),
+        'lizard_man': (Entity(x, y, 'l', colors.get('green'), 'Lizard Man', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=30, defense=2, power=3, xp=100,
+                                       regen=1, regen_rate=10,
+                                       is_humanoid=True),
+                       ai=BasicMonster())),
+        'ogre': (Entity(x, y, 'O', colors.get('light_green'), 'Ogre', blocks=True,
+                        render_order=RenderOrder.ACTOR,
+                        fighter=Fighter(hp=50, defense=1, power=6, xp=180,
+                                        is_humanoid=True),
+                        ai=BasicMonster())),
+        ###archers###
+        'goblin_slinger': (Entity(x, y, 'g', colors.get('orange'), 'Goblin Slinger', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=20, defense=0, power=2, xp=30,
+                                       accuracy=1, dodge=1,
+                                       missile=1, max_missile_range=6,
+                                       is_archer=True, is_humanoid=True),
+                       ai=ArcherMonster())),
+        'dark_elf': (Entity(x, y, 'e', colors.get('darker_gray'), 'Dark Elf', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=30, defense=1, power=3, xp=125,
+                                       accuracy=2, dodge=2,
+                                       missile=3, max_missile_range=8,
+                                       is_poisonous=True, poison=1,
+                                       is_archer=True, is_humanoid=True),
+                       ai=ArcherMonster())),
+        ###natural creatures###
+        'rat': (Entity(x, y, 'r', colors.get('sepia'), 'Rat', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=5, defense=0, power=1, xp=5,
+                                       is_natural=True),
+                       ai=NaturalMonster())),
+        'giant_rat': (Entity(x, y, 'r', colors.get('darker_sepia'), 'Giant Rat', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=10, defense=0, power=2, xp=25,
+                                       is_natural=True),
+                       ai=NaturalMonster())),
+        'giant_lizard': (Entity(x, y, 'l', colors.get('light_gray'), 'Giant Lizard', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=25, defense=1, power=4, xp=100,
+                                       regen=1, regen_rate=20,
+                                       is_natural=True),
+                       ai=NaturalMonster())),
+        'wolf': (Entity(x, y, 'w', colors.get('light_gray'), 'Wolf', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=20, defense=0, power=3, xp=80,
+                                       is_natural=True),
+                       ai=BasicMonster())),
+        'lion': (Entity(x, y, 'l', colors.get('dark_sepia'), 'Lion', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=30, defense=1, power=5, xp=150,
+                                       is_natural=True),
+                       ai=BasicMonster())),
+        'cave_bear': (Entity(x, y, 'b', colors.get('dark_gray'), 'Cave Bear', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=40, defense=2, power=7, xp=220,
+                                       is_natural=True),
+                       ai=BasicMonster())),
+        'giant_turtle': (Entity(x, y, 't', colors.get('dark_green'), 'Giant Turtle', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=40, defense=6, power=4, xp=280,
+                                       is_natural=True),
+                       ai=BasicMonster())),
+        ###undead###
+        'skeleton': (Entity(x, y, 's', colors.get('white'), 'Skeleton', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=5, defense=0, power=1, xp=5,
+                                       is_undead=True),
+                       ai=BasicMonster())),
+        'zombie': (Entity(x, y, 'z', colors.get('light_gray'), 'Zombie', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=20, defense=1, power=2, xp=35,
+                                       is_contagious=True, contagion=1,
+                                       is_undead=True),
+                       ai=BasicMonster())),
+        'ghoul': (Entity(x, y, 'g', colors.get('light_gray'), 'Ghoul', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=30, defense=1, power=4, xp=80,
+                                       paralyzes=True, is_undead=True),
+                       ai=BasicMonster())),
+        ###flying###
+        'bat': (Entity(x, y, 'b', colors.get('sepia'), 'Bat', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=5, defense=0, power=1, xp=5,
+                                       dodge=2,
+                                       is_flying=True, is_natural=True),
+                       ai=NaturalMonster())),
+        'giant_bat': (Entity(x, y, 'b', colors.get('darker_sepia'), 'Giant Bat', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=10, defense=0, power=2, xp=35,
+                                       dodge=2,
+                                       is_flying=True, is_natural=True),
+                       ai=NaturalMonster())),
+        'dragonfly': (Entity(x, y, 'd', colors.get('dark_azure'), 'Dragonfly', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=10, defense=0, power=2, xp=55,
+                                       dodge=3,
+                                       is_flying=True, is_natural=True),
+                       ai=NaturalMonster())),
+        'harpy': (Entity(x, y, 'h', colors.get('cyan'), 'Harpy', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=30, defense=1, power=3, xp=100,
+                                       is_flying=True),
+                       ai=BasicMonster())),
+        ###poison###
+        'rattlesnake': (Entity(x, y, 's', colors.get('dark_flame'), 'Rattlesnake', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=5, defense=0, power=2, xp=20,
+                                       is_poisonous=True, poison=1,
+                                       is_natural=True),
+                       ai=NaturalMonster())),
+        'giant_scorpion': (Entity(x, y, 's', colors.get('dark_gray'), 'Giant Scorpion', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=5, defense=1, power=2, xp=30,
+                                       is_poisonous=True, poison=1,
+                                       is_natural=True),
+                       ai=NaturalMonster())),
+        'giant_spider': (Entity(x, y, 'S', colors.get('violet'), 'Giant Spider', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=25, defense=1, power=3, xp=120,
+                                       is_poisonous=True, poison=2,
+                                       is_natural=True),
+                       ai=BasicMonster())),
+        ###darkling###
+        'dark_acolyte': (Entity(x, y, 'd', colors.get('purple'), 'Dark Acolyte', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=15, defense=0, power=2, xp=30,
+                                       is_corruptor=True, corruption=0),
+                       ai=BasicMonster())),
+        'dark_knight': (Entity(x, y, 'k', colors.get('purple'), 'Dark Knight', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=40, defense=4, power=7, xp=200,
+                                       is_corruptor=True, corruption=2),
+                       ai=BasicMonster())),
+        'dark_monk': (Entity(x, y, 'm', colors.get('purple'), 'Dark Monk', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=20, defense=2, power=4, xp=120,
+                                       is_corruptor=True, corruption=1),
+                       ai=BasicMonster())),
+        ###demons###
+        'demon_minion': (Entity(x, y, '&', colors.get('flame'), 'Demon Minion', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=5, defense=3, power=4, xp=120,
+                                       is_demon=True),
+                       ai=BasicMonster())),
+        ###human###
+        'bandit': (Entity(x, y, 'b', colors.get('green'), 'Bandit', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=15, defense=1, power=2, xp=40,
+                                       is_human=True),
+                       ai=BasicMonster())),
+        'barbarian': (Entity(x, y, 'b', colors.get('gray'), 'Barbarian', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=25, defense=1, power=4, xp=120,
+                                       is_human=True),
+                       ai=BasicMonster())),
+        'assassin': (Entity(x, y, 'a', colors.get('darkest_gray'), 'Assassin', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=20, defense=1, power=3, xp=140,
+                                       accuracy=2, dodge=2,
+                                       is_poisonous=True, poison=2,
+                                       is_human=True),
+                       ai=BasicMonster())),
+        'berserker': (Entity(x, y, 'b', colors.get('dark_flame'), 'Berserker', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=35, defense=0, power=5, xp=120,
+                                       is_human=True),
+                       ai=BasicMonster()))
+        }
+
+    monster_chances = {
+        'kobold': 50,
+        'goblin': 30,
+        'orc': 25,
+        'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], dungeon_level),
+        'minotaur': from_dungeon_level([[15, 5], [30, 7], [60, 9]], dungeon_level),
+        'lizard_man': 10,
+        'ogre': from_dungeon_level([[15, 5], [30, 10], [60, 13]], dungeon_level),
+        'goblin_slinger': 20,
+        'dark_elf': 5,
+        'rat': 50,
+        'giant_rat': 20,
+        'bat': 30,
+        'giant_bat': 15,
+        'giant_lizard': 10,
+        'wolf': from_dungeon_level([[15, 2], [30, 4], [45, 6]], dungeon_level),
+        'lion': from_dungeon_level([[10, 4], [15, 6], [20, 8]], dungeon_level),
+        'cave_bear': from_dungeon_level([[10, 6], [12, 8], [15, 10]], dungeon_level),
+        'giant_turtle': from_dungeon_level([[5, 3], [7, 7], [10, 9]], dungeon_level),
+        'dragonfly': 10,
+        'rattlesnake': 10,
+        'giant_scorpion': 15,
+        'giant_spider': from_dungeon_level([[15, 2], [30, 4], [45, 6]], dungeon_level),
+        'harpy': 5,
+        'skeleton': 20,
+        'zombie': 15,
+        'ghoul': 10,
+        'dark_acolyte': 10,
+        'dark_knight': from_dungeon_level([[15, 3], [30, 5], [60, 7]], dungeon_level),
+        'dark_monk': from_dungeon_level([[15, 3], [30, 5], [60, 7]], dungeon_level),
+        'demon_minion': from_dungeon_level([[5, 3], [7, 7], [10, 9]], dungeon_level),
+        'bandit': 20,
+        'barbarian': from_dungeon_level([[15, 3], [30, 5], [60, 7]], dungeon_level),
+        'assassin': from_dungeon_level([[15, 5], [30, 7], [60, 9]], dungeon_level),
+        'berserker': from_dungeon_level([[10, 6], [12, 8], [15, 10]], dungeon_level)  
+        
+        }
+
+    if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+        monster_choice = random_choice_from_dict(monster_chances)
+    else:
+        monster_choice = 'kobold'
+
+    monster = monsters.get(monster_choice)
+    entities.append(monster)
+
+def generate_epic_monster(x, y, entities, colors):
+    epic_monster_chances = {
+        'golem': 30,
+        'dragon': 10,
+        'kraken': 10,
+        'cerebus': 20,
+        'juggernaut': 5
+        }
+
+    epic_monsters = {
+        'golem': (Entity(x, y, 'G', colors.get('darkest_gray'), 'Golem', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=80, defense=8, power=7, xp=630,
+                                       is_construct=True, is_guardian=True),
+                       ai=BasicMonster())),
+        'dragon': (Entity(x, y, 'D', colors.get('darkest_red'), 'Dragon', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=120, defense=10, power=10, xp=1000,
+                                       is_flying=True, is_guardian=True),
+                       ai=BasicMonster())),
+        'kraken': (Entity(x, y, 'K', colors.get('darkest_blue'), 'Kraken', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=150, defense=6, power=12, xp=1200,
+                                       is_guardian=True),
+                       ai=BasicMonster())),
+        'cerebus': (Entity(x, y, 'C', colors.get('darkest_flame'), 'Cerebus', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=100, defense=6, power=9, xp=650,
+                                       is_guardian=True),
+                       ai=BasicMonster())),
+        'juggernaut': (Entity(x, y, 'J', colors.get('darkest_orange'), 'Juggernaut', blocks=True,
+                       render_order=RenderOrder.ACTOR,
+                       fighter=Fighter(hp=200, defense=10, power=7, xp=1200,
+                                       is_construct=True, is_guardian=True),
+                       ai=BasicMonster()))
+        }
+
+    if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+        epic_monster_choice = random_choice_from_dict(epic_monster_chances)
+    else:
+        epic_monster_choice = 'golem'
+
+    epic_monster = epic_monsters.get(epic_monster_choice)
+    entities.append(epic_monster)
+        
+        
+    

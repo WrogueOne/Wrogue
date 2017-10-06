@@ -42,9 +42,27 @@ def inventory_menu(con, root, header, player, inventory_width, screen_width, scr
 
         for item in player.inventory.items:
             if player.equipment.main_hand == item:
-                options.append('{0} (on main hand)'.format(item.name))
+                options.append('Main Hand:  {0}'.format(item.name))
             elif player.equipment.off_hand == item:
-                options.append('{0} (on off hand)'.format(item.name))
+                options.append('Off Hand:  {0}'.format(item.name))
+            elif player.equipment.head == item:
+                options.append('Head:  {0}'.format(item.name))
+            elif player.equipment.body == item:
+                options.append('Body:  {0}'.format(item.name))
+            elif player.equipment.ring_a == item:
+                options.append('Right Ring:  {0}'.format(item.name))
+            elif player.equipment.ring_b == item:
+                options.append('Left Ring:  {0}'.format(item.name))
+            elif player.equipment.tool == item:
+                options.append('Tool:  {0}'.format(item.name))
+            elif player.equipment.arms == item:
+                options.append('Arms:  {0}'.format(item.name))
+            elif player.equipment.off_hand == item:
+                options.append('Legs:  {0}'.format(item.name))
+            elif player.equipment.girdle == item:
+                options.append('Belt:  {0}'.format(item.name))
+            elif player.equipment.boots == item:
+                options.append('Boots:  {0}'.format(item.name))
             else:
                 options.append(item.name)
 
@@ -54,21 +72,24 @@ def inventory_menu(con, root, header, player, inventory_width, screen_width, scr
 def main_menu(con, root_console, background_image, screen_width, screen_height, colors):
     background_image.blit_2x(root_console, 0, 0)
 
-    title = 'TOMBS OF THE ANCIENT KINGS'
+    title = 'Evil Dungeon of Nastiness and Violent Death'
     center = (screen_width - len(title)) // 2
     root_console.draw_str(center, screen_height // 2 - 4, title, bg=None, fg=colors.get('light_yellow'))
 
-    title = 'By (Your name here)'
+    title = 'by The Westphal Game Conglomerate'
     center = (screen_width - len(title)) // 2
     root_console.draw_str(center, screen_height - 2, title, bg=None, fg=colors.get('light_yellow'))
 
-    menu(con, root_console, '', ['Play a new game', 'Continue last game', 'Quit'], 24, screen_width, screen_height)
+    menu(con, root_console, '', ['Play a new game', 'Continue last game', #'Tutorial',
+                                 'Quit'], 24, screen_width, screen_height)
 
 
 def level_up_menu(con, root, header, player, menu_width, screen_width, screen_height):
     options = ['Constitution (+20 HP, from {0})'.format(player.fighter.max_hp),
-               'Strength (+1 attack, from {0})'.format(player.fighter.power),
-               'Agility (+1 defense, from {0})'.format(player.fighter.defense)]
+               'Strength (+1 damage, from {0})'.format(player.fighter.base_power),
+               'Focus (+1 attack, from {0})'.format(player.fighter.base_accuracy),
+               'Resiliency (+1 defense, from {0})'.format(player.fighter.base_defense),
+               'Agility (+1 dodge, from {0})'.format(player.fighter.base_dodge)]
 
     menu(con, root, header, options, menu_width, screen_width, screen_height)
 

@@ -3,18 +3,17 @@ import tdl
 from tcod import image_load
 
 from death_functions import kill_monster, kill_player
-from entity import get_blocking_entities_at_location
+from components.entity import get_blocking_entities_at_location
 from game_messages import Message
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse, handle_main_menu
-from loader_functions.initialize_new_game import get_constants, get_game_variables
+from loader_functions.initialize_new_game import get_constants, initialize_game
 from loader_functions.data_loaders import load_game, save_game
 from map_utils import next_floor
 from menus import main_menu, message_box
 from render_functions import clear_all, render_all
 
-
-def play_game(player, entities, game_map, message_log, game_state, root_console, con, panel, constants):
+def play_game(player, entities, game_map, message_log, game_state, root_console, con, panel, sidebar, constants):
     tdl.set_font('arial10x10.png', greyscale=True, altLayout=True)
 
     fov_recompute = True
@@ -30,10 +29,12 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
             game_map.compute_fov(player.x, player.y, fov=constants['fov_algorithm'], radius=constants['fov_radius'],
                                  light_walls=constants['fov_light_walls'])
 
-        render_all(con, panel, entities, player, game_map, fov_recompute, root_console, message_log,
+        render_all(con, panel, sidebar, entities, player, game_map, fov_recompute, root_console, message_log,
                    constants['screen_width'], constants['screen_height'], constants['bar_width'],
-                   constants['panel_height'], constants['panel_y'], mouse_coordinates, constants['colors'],
-                   game_state)
+                   constants['panel_height'], constants['panel_y'], constants['sidebar_height'],
+                   constants['sidebar_width'], constants['sidebar_x'], constants['sidebar_y'],
+                   mouse_coordinates, constants['colors'], game_state)
+
         tdl.flush()
 
         clear_all(con, entities)
@@ -77,6 +78,17 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
         player_turn_results = []
 
         if move and game_state == GameStates.PLAYERS_TURN:
+            player.fighter.regen_timer -= player.fighter.regen_rate
+            if player.fighter.regen_timer <= 0:
+                player.fighter.regenerate()
+                player.fighter.regen_timer = player.fighter.base_regen_timer
+
+            if player.fighter.is_poisoned == True:
+                player.fighter.take_damage(player.fighter.poison_stack)
+                player.fighter.poison_timer -= 1
+                if player.fighter.poison_timer <= 0:
+                    player.fighter.is_poisoned = False
+
             dx, dy = move
             destination_x = player.x + dx
             destination_y = player.y + dy
@@ -92,7 +104,7 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
 
                     fov_recompute = True
 
-                game_state = GameStates.ENEMY_TURN
+            game_state = GameStates.ENEMY_TURN
 
         elif wait:
             game_state = GameStates.ENEMY_TURN
@@ -140,10 +152,14 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
             if level_up == 'hp':
                 player.fighter.base_max_hp += 20
                 player.fighter.hp += 20
-            elif level_up == 'str':
+            elif level_up == 'pwr':
                 player.fighter.base_power += 1
+            elif level_up == 'acc':
+                player.fighter.base_accuracy += 1
             elif level_up == 'def':
                 player.fighter.base_defense += 1
+            elif level_up == 'dod':
+                player.fighter.base_dodge += 1
 
             game_state = previous_game_state
 
@@ -166,10 +182,6 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
                 game_state = previous_game_state
             elif game_state == GameStates.TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
-            else:
-                save_game(player, entities, game_map, message_log, game_state)
-
-                return True
 
         if fullscreen:
             tdl.set_fullscreen(not tdl.get_fullscreen())
@@ -184,6 +196,7 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
             targeting = player_turn_result.get('targeting')
             targeting_cancelled = player_turn_result.get('targeting_cancelled')
             xp = player_turn_result.get('xp')
+            re_render = player_turn_result.get('re_render')
 
             if message:
                 message_log.add_message(message)
@@ -192,7 +205,7 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
                 if dead_entity == player:
                     message, game_state = kill_player(dead_entity, constants['colors'])
                 else:
-                    message = kill_monster(dead_entity, constants['colors'])
+                    message = kill_monster(dead_entity, constants['colors'], entities)
 
                 message_log.add_message(message)
 
@@ -249,6 +262,14 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
                     previous_game_state = game_state
                     game_state = GameStates.LEVEL_UP
 
+            if re_render:
+                fov_recompute = True
+                render_all(con, panel, sidebar, entities, player, game_map, fov_recompute, root_console, message_log,
+                   constants['screen_width'], constants['screen_height'], constants['bar_width'],
+                   constants['panel_height'], constants['panel_y'], constants['sidebar_height'],
+                   constants['sidebar_width'], constants['sidebar_x'], constants['sidebar_y'],
+                   mouse_coordinates, constants['colors'], game_state)
+
         if game_state == GameStates.ENEMY_TURN:
             for entity in entities:
                 if entity.ai:
@@ -274,6 +295,7 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
 
                     if game_state == GameStates.PLAYER_DEAD:
                         break
+
             else:
                 game_state = GameStates.PLAYERS_TURN
 
@@ -285,6 +307,7 @@ def main():
     root_console = tdl.init(constants['screen_width'], constants['screen_height'], constants['window_title'])
     con = tdl.Console(constants['screen_width'], constants['screen_height'])
     panel = tdl.Console(constants['screen_width'], constants['panel_height'])
+    sidebar = tdl.Console(constants['sidebar_width'], constants['sidebar_height'])
 
     player = None
     entities = []
@@ -310,7 +333,7 @@ def main():
                       constants['screen_height'], constants['colors'])
 
             if show_load_error_message:
-                message_box(con, root_console, 'No save game to load', 50, constants['screen_width'],
+                message_box(con, root_console, 'No Saved Game Data', 50, constants['screen_width'],
                             constants['screen_height'])
 
             tdl.flush()
@@ -324,9 +347,8 @@ def main():
             if show_load_error_message and (new_game or load_saved_game or exit_game):
                 show_load_error_message = False
             elif new_game:
-                player, entities, game_map, message_log, game_state = get_game_variables(constants)
+                player, entities, game_map, message_log, game_state = initialize_game(constants)
                 game_state = GameStates.PLAYERS_TURN
-
                 show_main_menu = False
             elif load_saved_game:
                 try:
@@ -341,7 +363,8 @@ def main():
             root_console.clear()
             con.clear()
             panel.clear()
-            play_game(player, entities, game_map, message_log, game_state, root_console, con, panel, constants)
+            sidebar.clear()
+            play_game(player, entities, game_map, message_log, game_state, root_console, con, panel, sidebar, constants)
 
             show_main_menu = True
 
