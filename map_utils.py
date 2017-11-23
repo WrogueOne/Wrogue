@@ -183,11 +183,11 @@ def make_maze_map(game_map, map_width, map_height, player, entities, colors, lev
                  stairs=Stairs(game_map.dungeon_level + 1))
     entities.append(down_stairs)
 
-    guardian = (Entity(x, y, 'M', colors.get('purple'), 'Guardian Minotaur', blocks=True,
-                       render_order=RenderOrder.ACTOR,
-                       fighter=Fighter(hp=80, defense=4, power=8, xp=1000),
-                       ai=GuardianMonster()))
-    entities.append(guardian)
+    # guardian = (Entity(x, y, 'M', colors.get('purple'), 'Guardian Minotaur', blocks=True,
+    #                    render_order=RenderOrder.ACTOR,
+    #                    fighter=Fighter(hp=80, defense=4, power=8, xp=1000),
+    #                    ai=GuardianMonster()))
+    # entities.append(guardian)
 
     room = Rect(0,0,0,0)
 
