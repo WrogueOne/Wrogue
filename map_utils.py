@@ -91,7 +91,7 @@ def place_entities(room, entities, dungeon_level, colors, level_type, open_cells
             (x, y) = open_cells.pop()
             generate_monsters(x, y, entities, dungeon_level, colors)
 
-        (x, y) = open_cells.pop
+        (x, y) = open_cells.pop()
         generate_epic_monster(x, y, entities, colors)
 
         for i in range(max_items_per_maze):
