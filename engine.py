@@ -13,6 +13,8 @@ from map_utils import next_floor
 from menus import main_menu, message_box
 from render_functions import clear_all, render_all
 
+DEBUG = True
+
 def play_game(player, entities, game_map, message_log, game_state, root_console, con, panel, sidebar, constants):
     tdl.set_font('arial10x10.png', greyscale=True, altLayout=True)
 
@@ -71,6 +73,9 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
         show_character_screen = action.get('show_character_screen')
         exit = action.get('exit')
         fullscreen = action.get('fullscreen')
+
+        skip_floor = action.get('skip_floor')
+
 
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -147,6 +152,15 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
                     break
             else:
                 message_log.add_message(Message('There are no stairs here.', constants['colors'].get('yellow')))
+
+        if skip_floor and DEBUG == True:
+            ''' Pressing Shift+S will skip the current floor.
+            ATENTION: It is necessary for the player to make a first step
+            at each floor before skipping (it's a bug, not a feature!) ''' 
+            game_map, entities = next_floor(player, message_log, entity.stairs.floor, constants)
+            fov_recompute = True
+            con.clear()
+
 
         if level_up:
             if level_up == 'hp':
@@ -298,6 +312,7 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
 
             else:
                 game_state = GameStates.PLAYERS_TURN
+
 
 def main():
     constants = get_constants()

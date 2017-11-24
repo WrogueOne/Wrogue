@@ -60,6 +60,9 @@ def handle_player_turn_keys(user_input):
     elif key_char == 'c':
         return {'show_character_screen': True}
 
+    elif key_char == 's' and user_input.shift:
+        return {'skip_floor': True}
+
     if user_input.key == 'ENTER' and user_input.alt:
         # Alt+Enter: toggle full screen
         return {'fullscreen': True}
