@@ -196,7 +196,8 @@ def play_game(player, entities, game_map, message_log, game_state, root_console,
                 game_state = previous_game_state
             elif game_state == GameStates.TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
-
+            elif game_state == GameStates.PLAYERS_TURN:
+                return
         if fullscreen:
             tdl.set_fullscreen(not tdl.get_fullscreen())
 
